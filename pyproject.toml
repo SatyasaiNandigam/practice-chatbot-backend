@@ -1,0 +1,13 @@
+[project]
+name = "chatbot-with-ui"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "langchain>=1.0.8",
+    "langchain-core>=1.1.0",
+    "langchain-openai>=1.0.3",
+    "langgraph>=1.0.3",
+    "streamlit>=1.51.0",
+]
