@@ -5,9 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "ddgs>=9.9.1",
+    "dotenv>=0.9.9",
+    "fastapi>=0.122.0",
     "langchain>=1.0.8",
+    "langchain-community>=0.4.1",
     "langchain-core>=1.1.0",
+    "langchain-mcp-adapters>=0.1.14",
     "langchain-openai>=1.0.3",
     "langgraph>=1.0.3",
+    "langgraph-checkpoint-sqlite>=3.0.0",
     "streamlit>=1.51.0",
 ]
