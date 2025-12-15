@@ -1,7 +1,7 @@
 from typing import TypedDict, Annotated, List
 
 from langgraph.graph.message import add_messages
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langchain_openai import ChatOpenAI
@@ -22,13 +22,15 @@ llm = ChatOpenAI(model="gpt-4o-mini")
 
 client = MultiServerMCPClient(
     {
-        "ExpenseTracker": {
+        "PersonaTracker": {
             "transport": "streamable_http",
             "url": "http://127.0.0.1:8000/mcp"
         }
     }
 )
 
+
+search_tool = DuckDuckGoSearchResults()
 
 
 
@@ -39,11 +41,13 @@ class ChatState(TypedDict):
 
 async def build_graph():
     
-    tools = await client.get_tools()
+    mcp_tools = await client.get_tools()
+    
+    tools = [search_tool, *mcp_tools]
     
     llm_with_tools = llm.bind_tools(tools)
     
-    async_conn = await aiosqlite.connect("aio_chatbot.db")
+    async_conn = await aiosqlite.connect("new_chatbot.db")
     
     # Async checkpointer
     checkpointer = AsyncSqliteSaver(conn= async_conn)
@@ -52,7 +56,25 @@ async def build_graph():
     
     async def chat_node(state: ChatState) -> ChatState:
         messages = state["messages"]
-        response = await llm_with_tools.ainvoke(messages)
+        system_prompt = """
+        You are a helpful personal assistant. Always check current date and time before answering questions.
+        Use the tools available to you to answer user queries.
+        
+        Tasks you can help with:
+        1. Managing personal notes.
+        2. Managing personal tasks.
+        3. Managing reminders using google calendar.
+        
+        NOTE: Always check the schema structure if available if you want to make any create or update operations to the database.
+              Always try to fill optional fields if possible while creating entries.
+        """
+        response = await llm_with_tools.ainvoke(
+            [
+                SystemMessage(content=system_prompt),
+            ] 
+            +
+            messages
+            )
         return {"messages": [response]}
 
     graph.add_node("chat_node", chat_node)
